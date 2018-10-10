@@ -34,7 +34,7 @@ public class BankingDAO {
 		}
 		return result;
 	}
-	
+
 	/**
 	 * Transfère amount € du compte du client fromID vers le compte du client toID
 	 * @param fromID l'ID du client à débiter
@@ -42,15 +42,26 @@ public class BankingDAO {
 	 * @param amount le montant à trasférer (positif ou nul)
 	 * @throws java.lang.Exception si quelque chose ne marche pas
 	 */
+        
+        
 	public void bankTransferTransaction(int fromID, int toID, float amount) throws Exception {
 		if (amount < 0)
 			throw new IllegalArgumentException("Le montant ne doit pas être négatif");
 		// On calcule le résultat
+   
 		String sql = "UPDATE Account SET Total = Total + ? WHERE CustomerID = ?";
+                String user="SELECT * FROM Customer WHERE ID= ?";
+                
 		try (	Connection myConnection = myDataSource.getConnection();
-			PreparedStatement statement = myConnection.prepareStatement(sql)) {
-			
-			myConnection.setAutoCommit(false); // On démarre une transaction
+			PreparedStatement statement = myConnection.prepareStatement(sql);
+                        PreparedStatement stmt = myConnection.prepareStatement(user)){
+			stmt.setInt(1, fromID);
+                        try (ResultSet rs = stmt.executeQuery()) {
+				if (rs.next()) { // On a trouvé
+					stmt.setInt(1, toID);
+                                        try(ResultSet rs2 = stmt.executeQuery()){
+                                            if (rs2.next()){
+                                                	myConnection.setAutoCommit(false); // On démarre une transaction
 			try {
 				// On débite le 1° client
 				statement.setFloat( 1, amount * -1);
@@ -72,6 +83,17 @@ public class BankingDAO {
 				 // On revient au mode de fonctionnement sans transaction
 				myConnection.setAutoCommit(true);				
 			}
-		}
+		
+                                                
+                                            }
+                                            
+                                        }
+                                        
+					
+				} 
+                        }
+		
 	}
+        }
 }
+
